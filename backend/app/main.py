@@ -1,7 +1,24 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 
-app = FastAPI()
+from app.database import engine
+
+
+def check_database_connection():
+    with engine.connect() as connection:
+        connection.execute(text("SELECT 1"))
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    check_database_connection()
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
