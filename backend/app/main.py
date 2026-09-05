@@ -5,6 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
 from app.database import engine
+from app.jobs import router as jobs_router
+from app.models import Base
 
 
 def check_database_connection():
@@ -15,6 +17,7 @@ def check_database_connection():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     check_database_connection()
+    Base.metadata.create_all(bind=engine)
     yield
 
 
@@ -27,6 +30,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(jobs_router)
 
 
 @app.get("/")
