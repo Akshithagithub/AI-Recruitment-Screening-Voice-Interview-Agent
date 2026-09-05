@@ -13,9 +13,12 @@ from app.schemas import JobPayload, JobResponse, MessageResponse
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
 
+
+
 def get_db() -> Generator[Session, None, None]:
     with Session(engine) as session:
         yield session
+
 
 
 def database_error() -> HTTPException:
