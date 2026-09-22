@@ -44,3 +44,61 @@ class JobResponse(JobPayload):
 
 class MessageResponse(BaseModel):
     message: str
+    
+    
+class ApplicationCreate(BaseModel):
+    job_id: int
+    candidate_name: str = Field(min_length=1, max_length=255)
+    candidate_email: str = Field(min_length=1, max_length=255)
+    phone: str | None = Field(default=None, max_length=50)
+    resume_url: str | None = Field(default=None, max_length=2048)
+    cover_letter: str | None = None
+
+    @field_validator("candidate_name", "candidate_email")
+    @classmethod
+    def fields_must_not_be_blank(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Field must not be blank")
+        return value
+
+
+class ApplicationResponse(ApplicationCreate):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    status: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class ExperienceItem(BaseModel):
+    company: str | None = None
+    role: str | None = None
+    duration: str | None = None
+    description: str | None = None
+
+
+class EducationItem(BaseModel):
+    institution: str | None = None
+    degree: str | None = None
+    field_of_study: str | None = None
+    duration: str | None = None
+
+
+class ProjectItem(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    technologies: list[str] = Field(default_factory=list)
+
+
+class ResumeProfile(BaseModel):
+    name: str | None = None
+    email: str | None = None
+    phone: str | None = None
+
+    skills: list[str] = Field(default_factory=list)
+    education: list[EducationItem] = Field(default_factory=list)
+    experience: list[ExperienceItem] = Field(default_factory=list)
+    projects: list[ProjectItem] = Field(default_factory=list)
+    certifications: list[str] = Field(default_factory=list)

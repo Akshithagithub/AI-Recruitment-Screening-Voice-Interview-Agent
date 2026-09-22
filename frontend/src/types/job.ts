@@ -53,9 +53,7 @@ export type JobFormValues = {
 };
 
 export type Job = JobFormValues & {
-  id: number;
+  id: string;
   status: JobStatus;
   publicApplicationUrl?: string;
-  createdAt: string;
-  updatedAt: string;
 };

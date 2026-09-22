@@ -3,6 +3,7 @@ from datetime import datetime
 from sqlalchemy import DateTime, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
 
 
 class Base(DeclarativeBase):
@@ -34,3 +35,53 @@ class Job(Base):
     public_application_url: Mapped[str | None] = mapped_column(String(2048), unique=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+class Application(Base):
+    __tablename__ = "applications"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    job_id: Mapped[int] = mapped_column(
+        ForeignKey("jobs.id"),
+        nullable=False,
+    )
+
+    candidate_name: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+    )
+
+    candidate_email: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+    )
+
+    phone: Mapped[str | None] = mapped_column(
+        String(50),
+    )
+
+    resume_url: Mapped[str | None] = mapped_column(
+        String(2048),
+    )
+
+    cover_letter: Mapped[str | None] = mapped_column(
+        Text,
+    )
+
+    status: Mapped[str] = mapped_column(
+        String(30),
+        nullable=False,
+        default="submitted",
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )

@@ -6,6 +6,7 @@ from sqlalchemy import text
 
 from app.database import engine
 from app.jobs import router as jobs_router
+from app.applications import router as applications_router
 from app.models import Base
 
 
@@ -32,6 +33,7 @@ app.add_middleware(
 )
 
 app.include_router(jobs_router)
+app.include_router(applications_router)
 
 
 @app.get("/")

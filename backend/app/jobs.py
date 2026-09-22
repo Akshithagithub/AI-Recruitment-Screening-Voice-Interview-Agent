@@ -13,12 +13,9 @@ from app.schemas import JobPayload, JobResponse, MessageResponse
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
 
-
-
 def get_db() -> Generator[Session, None, None]:
     with Session(engine) as session:
         yield session
-
 
 
 def database_error() -> HTTPException:
@@ -60,6 +57,21 @@ def find_job(job_id: int, db: Session) -> Job:
 def get_job(job_id: int, db: Session = Depends(get_db)) -> Job:
     try:
         return find_job(job_id, db)
+    except SQLAlchemyError as error:
+        raise database_error() from error
+    
+@router.get("/{job_id}/public", response_model=JobResponse)
+def get_public_job(job_id: int, db: Session = Depends(get_db)) -> Job:
+    try:
+        job = find_job(job_id, db)
+
+        if job.status != "published":
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Job is not available",
+            )
+
+        return job
     except SQLAlchemyError as error:
         raise database_error() from error
 

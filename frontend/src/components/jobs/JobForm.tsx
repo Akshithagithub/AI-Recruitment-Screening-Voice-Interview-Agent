@@ -9,7 +9,7 @@ import { SkillInput } from "@/src/components/jobs/SkillInput";
 import { jobsService } from "@/src/services/jobs";
 import { employmentTypes, experienceLevels, type JobFormValues } from "@/src/types/job";
 
-const emptyValues: JobFormValues = { title: "", department: "", location: "", employmentType: "", experienceLevel: "", openings: 1, description: "", responsibilities: "", requiredSkills: [], preferredSkills: [], educationRequirements: "", experienceRequirements: "", screening: { minimumScore: 0, shortlistThreshold: 80, manualReviewThreshold: 60, rejectThreshold: 0 }, interview: { durationMinutes: 30, technicalSkills: [], behavioralCriteria: [], difficulty: "", technicalQuestionCount: 0, behavioralQuestionCount: 0, followUpQuestionsEnabled: false } };
+const emptyValues: JobFormValues = { title: "", department: "", location: "", employmentType: "", experienceLevel: "", openings: 1, description: "", responsibilities: "", requiredSkills: [], preferredSkills: [], educationRequirements: "", experienceRequirements: "", screening: { minimumScore: 0, shortlistThreshold: 0, manualReviewThreshold: 0, rejectThreshold: 0 }, interview: { durationMinutes: 30, technicalSkills: [], behavioralCriteria: [], difficulty: "", technicalQuestionCount: 0, behavioralQuestionCount: 0, followUpQuestionsEnabled: false } };
 
 export function JobForm({ initialValues = emptyValues, mode, jobId }: { initialValues?: JobFormValues; mode: "create" | "edit"; jobId?: string }) {
   const router = useRouter();
@@ -21,15 +21,22 @@ export function JobForm({ initialValues = emptyValues, mode, jobId }: { initialV
   const updateInterview = <K extends keyof JobFormValues["interview"]>(key: K, value: JobFormValues["interview"][K]) => setValues((current) => ({ ...current, interview: { ...current.interview, [key]: value } }));
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (saving) return;
     setMessage("");
     setSaving(true);
     try {
-      const job = mode === "create" ? await jobsService.create(values) : await jobsService.update(jobId!, values);
-      router.push(`/jobs/${job.id}`);
+      if (mode === "create") {
+        const createdJob = await jobsService.create(values);
+        setMessage("Job created successfully. Redirecting to the dashboard...");
+        window.setTimeout(() => router.push(`/dashboard?created=${createdJob.id}`), 500);
+      } else {
+        if (!jobId) throw new Error("A job ID is required to update this job.");
+        await jobsService.update(jobId, values);
+        router.push("/jobs");
+      }
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Unable to save the job.");
-    } finally {
       setSaving(false);
+      setMessage(error instanceof Error ? error.message : mode === "create" ? "Unable to create the job. Please try again." : "Unable to update the job. Please try again.");
     }
   }
   return <form className="space-y-6" onSubmit={submit}>
@@ -45,6 +52,6 @@ export function JobForm({ initialValues = emptyValues, mode, jobId }: { initialV
     <FormSection title="Interview configuration" description="Configure the future interview workflow for this role.">
       <div className="grid gap-5 md:grid-cols-2"><div><FieldLabel label="Interview duration (minutes)" htmlFor="duration" /><Input id="duration" min="1" type="number" value={values.interview.durationMinutes} onChange={(e) => updateInterview("durationMinutes", Number(e.target.value))} /></div><div><FieldLabel label="Difficulty" htmlFor="difficulty" /><Select id="difficulty" value={values.interview.difficulty} onChange={(e) => updateInterview("difficulty", e.target.value)}><option value="">Select difficulty</option><option>Easy</option><option>Moderate</option><option>Challenging</option></Select></div><SkillInput id="technicalSkills" label="Technical skills" value={values.interview.technicalSkills} onChange={(value) => updateInterview("technicalSkills", value)} /><SkillInput id="behavioralCriteria" label="Behavioral criteria" value={values.interview.behavioralCriteria} onChange={(value) => updateInterview("behavioralCriteria", value)} /><div><FieldLabel label="Technical questions count" htmlFor="technicalCount" /><Input id="technicalCount" min="0" type="number" value={values.interview.technicalQuestionCount} onChange={(e) => updateInterview("technicalQuestionCount", Number(e.target.value))} /></div><div><FieldLabel label="Behavioral questions count" htmlFor="behavioralCount" /><Input id="behavioralCount" min="0" type="number" value={values.interview.behavioralQuestionCount} onChange={(e) => updateInterview("behavioralQuestionCount", Number(e.target.value))} /></div><label className="flex items-center gap-3 text-sm font-medium text-slate-700 md:col-span-2"><input className="h-4 w-4 accent-teal-700" type="checkbox" checked={values.interview.followUpQuestionsEnabled} onChange={(e) => updateInterview("followUpQuestionsEnabled", e.target.checked)} />Enable follow-up questions</label></div>
     </FormSection>
-    <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center"><Button disabled={saving} type="submit">{saving ? "Saving..." : mode === "create" ? "Save job" : "Save changes"}</Button><Button href="/jobs" variant="ghost">Cancel</Button>{message && <p className="text-sm text-rose-700" role="alert">{message}</p>}</div>
+    <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center"><Button disabled={saving} type="submit">{saving ? "Saving..." : mode === "create" ? "Save job" : "Save changes"}</Button><Button href="/jobs" variant="ghost">Cancel</Button>{message && <p className={`text-sm ${saving ? "text-teal-700" : "text-rose-700"}`} role={saving ? "status" : "alert"}>{message}</p>}</div>
   </form>;
 }
